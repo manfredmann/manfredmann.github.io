@@ -1,1 +1,72 @@
-Hello, world!
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+		<title>manfredmann</title>
+		<style type="text/css">
+			body {
+				padding: 50px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="text-center">Заметки</h1>
+			<br>
+			<div class="card">
+				<h4 class="card-header">Установка OpenSSH в QNX4.25</h4>
+				<div class="card-body">
+					<p>QNX4.25 — система довольно старая, но в силу некоторых обстоятельств, необходимо работать именно с ней. В силу своего возраста, в ней нет многих очень удобных вещей, включая удалённый доступ. И не просто удалённый доступ, а чтобы можно было попасть в терминал не только из другой машины под управление QNX, но и из других систем. Да, вы скажете: «но есть же telnetd! И он входит в состав этой ОС». Telnet это конечно хорошо, но как-то уж совсем не современно, к тому же OpenSSH позволяет удалённо смонировать файловую систему, что может быть очень удобно. Итак, сегодня мы будет заводить OpenSSH.</p>
+					<p>Первоночальная проблема в том, что в QNX4.25 нет генератора псевдослучайных чисел (/dev/random, /dev/urandom), а они необходимы для функционирования OpenSSH, т. к. там используется шифрование. К счастью, проблему можно решить при помощи prngd (Pseudo Random Number Generator Daemon).</p>
+					<p>Далее ничего сложного. (сложностью было откопать версию OpenSSH как можно свежее, и работающую с ним версию prngd).</p>
+					<p>Исходим из того, что стек TCP/IP 5.10 у нас уже запущен и работает.</p>
+					<img src="img/qnx_ssh/tcpip.png" class="rounded mx-auto d-block">
+					<p>Скачиваем два архива:
+						<br>
+						<ul>
+							<li>PRNGD: <a href="https://stuff.pentium02.org/qnx4/prngd.tar">https://stuff.pentium02.org/qnx4/prngd.tar</a></li>
+							<li>OpenSSH 6.8.0a: <a href="https://stuff.pentium02.org/qnx4/openssh-6.8.0a-18_inst.sh.tar">https://stuff.pentium02.org/qnx4/openssh-6.8.0a-18_inst.sh.tar</a></li>
+						</ul>
+						<p>Необходимо доставить эти файлы на машину с QNX. В случае виртуальной машны можно, например, создать iso образ и подключить в качестве компакт диска.</p>
+					</p>
+					<hr>
+					<h5>Установка PRNGD</h5>
+					<p>Распакуем архив prngd.tar. Он содержит в себе бинарник и конфиг. Скопируем их на свои места, и запустим.
+						<br>
+						<img src="img/qnx_ssh/prngd.png" class="rounded mx-auto d-block">
+						<br>
+						/etc/prngd.conf — файл конфигурации
+						<br>
+						/etc/egd-pool — unix сокет
+						<br>
+						Всё, демон запущен и работает.
+					</p>
+					<hr>
+					<h5>Установка OpenSSH 6.8.0a</h5>
+					<p>Скопируем себе openssh-6.8.0a-18_inst.sh.tar. Распакуем, и сделаем его исполняемым. Перед запуском установочного скрипта, демон prngd должен быть запущен, т. к. в процессе установки будут автоматически сгенерированы host ключи. В принципе, это можно сделать и позже, вручную, но так гораздо удобнее, правда?</p>
+					<img src="img/qnx_ssh/ssh1.png" class="rounded mx-auto d-block">
+					<p>Запустим установку. В случае, если всё прошло успешно, вы увидете примерно следующее:</p>
+					<img src="img/qnx_ssh/ssh2.png" class="rounded mx-auto d-block">
+					<p>Теперь надо немного отредактировать файл конфигурации /etc/ssh/sshd_config при помощи vedit.</p>
+					<p>Параметр UsePrivilegeSeparation установить в no (на совести авторов порта, sandbox — не работает).</p>
+					<p>По умолчанию в QNX пользователь root без пароля, если мы не хотим это менять, то устанавливаем параметр 
+					PermitEmptyPasswords в yes, и PermitRootLogin в yes, чобы разрешить логиниться под root-ом. 
+					А это уже на вашей совести :-)</p>
+					<p>Пробуем запустить sshd (обязательно полный путь)</p>
+					<img src="img/qnx_ssh/ssh3.png" class="rounded mx-auto d-block">
+					<p>Кажется, всё в порядке. Пробуем подключиться:</p>
+					<img src="img/qnx_ssh/ssh4.png" class="rounded mx-auto d-block">
+					<br><br>
+					<p>Работает! Напоследок, добавим строки запуска в sysinit:</p>
+					<img src="img/qnx_ssh/sysinit.png" class="rounded mx-auto d-block">
+					<p>Перезагружаемся и проверяем:</p>
+					<img src="img/qnx_ssh/reboot.png" class="rounded mx-auto d-block">
+				</div>
+			</div>	
+		</div>
+	</body>
+</html>
